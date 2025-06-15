@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Quiz App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Custom styles for the Inter font */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-blue-400 to-purple-600 min-h-screen flex items-center justify-center p-4">
+    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Quiz Time!</h1>
+
+        <div id="quiz-container" class="space-y-6">
+            <p id="question" class="text-xl font-semibold text-gray-700 mb-4"></p>
+            <ul id="choices" class="space-y-3">
+                </ul>
+            <p id="result" class="text-lg font-medium text-center mt-4"></p>
+            <button id="next-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg shadow-md transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-75">
+                Next
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Quiz data containing questions, choices, and answers
+        const quizData = [
+            {
+                question: "What is the capital of France?",
+                choices: ["Paris", "London", "Rome", "Berlin"],
+                answer: "Paris"
+            },
+            {
+                question: "Which language runs in a web browser?",
+                choices: ["Python", "Java", "C++", "JavaScript"],
+                answer: "JavaScript"
+            },
+            {
+                question: "Who wrote 'To Kill a Mockingbird'?",
+                choices: ["Harper Lee", "Mark Twain", "Ernest Hemingway", "F. Scott Fitzgerald"],
+                answer: "Harper Lee"
+            }
+        ];
+
+        // Initialize quiz state variables
+        let currentQuestionIndex = 0; // Tracks the current question being displayed
+        let score = 0; // Tracks the user's score
+
+        // Get references to HTML elements
+        const questionEl = document.getElementById('question');
+        const choicesEl = document.getElementById('choices');
+        const nextBtn = document.getElementById('next-btn');
+        const resultEl = document.getElementById('result');
+
+        /**
+         * Loads the current question and its choices into the UI.
+         * Resets the state of the choices and result message.
+         */
+        function loadQuestion() {
+            resetState(); // Clear previous choices and hide next button
+            const currentQuestion = quizData[currentQuestionIndex];
+            questionEl.innerText = currentQuestion.question; // Display the question text
+
+            // Create buttons for each choice and attach event listeners
+            currentQuestion.choices.forEach(choice => {
+                const li = document.createElement('li'); // Create a list item for each choice
+                const button = document.createElement('button'); // Create a button for the choice
+                button.innerText = choice; // Set button text to the choice
+                // Add Tailwind classes for styling the choice buttons
+                button.classList.add('w-full', 'bg-gray-100', 'hover:bg-gray-200', 'text-gray-800', 'font-semibold', 'py-2', 'px-4', 'rounded-lg', 'transition', 'duration-200', 'ease-in-out', 'focus:outline-none', 'focus:ring-2', 'focus:ring-gray-300', 'focus:ring-opacity-75');
+                button.addEventListener('click', () => selectAnswer(choice, button)); // Attach click event listener
+                li.appendChild(button); // Add button to list item
+                choicesEl.appendChild(li); // Add list item to choices list
+            });
+        }
+
+        /**
+         * Resets the UI state before loading a new question.
+         * Hides the next button, clears the result message, and removes old choices.
+         */
+        function resetState() {
+            nextBtn.style.display = 'none'; // Hide the next button initially
+            resultEl.innerText = ''; // Clear any previous result message
+            choicesEl.innerHTML = ''; // Clear all choice buttons
+        }
+
+        /**
+         * Handles the user's answer selection.
+         * Checks if the selected answer is correct, updates the score, and displays feedback.
+         * @param {string} selected - The choice selected by the user.
+         * @param {HTMLElement} selectedButton - The button element that was clicked.
+         */
+        function selectAnswer(selected, selectedButton) {
+            // Disable all choice buttons after an answer is selected
+            Array.from(choicesEl.children).forEach(li => {
+                const button = li.querySelector('button');
+                if (button) {
+                    button.disabled = true; // Disable the button
+                    button.classList.remove('hover:bg-gray-200'); // Remove hover effect
+                    button.classList.add('cursor-not-allowed'); // Indicate it's disabled
+                }
+            });
+
+            const correctAnswer = quizData[currentQuestionIndex].answer; // Get the correct answer for the current question
+
+            if (selected === correctAnswer) {
+                resultEl.innerText = 'Correct!'; // Display 'Correct!' message
+                resultEl.classList.add('text-green-600'); // Add green text color for correct
+                score++; // Increment score
+                selectedButton.classList.add('bg-green-200', 'border-2', 'border-green-500'); // Highlight correct choice
+            } else {
+                resultEl.innerText = `Wrong! Correct answer: ${correctAnswer}`; // Display 'Wrong!' message with correct answer
+                resultEl.classList.add('text-red-600'); // Add red text color for wrong
+                selectedButton.classList.add('bg-red-200', 'border-2', 'border-red-500'); // Highlight wrong choice
+
+                // Find and highlight the correct answer
+                Array.from(choicesEl.children).forEach(li => {
+                    const button = li.querySelector('button');
+                    if (button && button.innerText === correctAnswer) {
+                        button.classList.add('bg-green-200', 'border-2', 'border-green-500');
+                    }
+                });
+            }
+            nextBtn.style.display = 'block'; // Show the next button
+        }
+
+        /**
+         * Event listener for the 'Next' button.
+         * Advances to the next question or shows the final score if the quiz is over.
+         */
+        nextBtn.addEventListener('click', () => {
+            currentQuestionIndex++; // Move to the next question
+            if (currentQuestionIndex < quizData.length) {
+                loadQuestion(); // Load the next question
+            } else {
+                showScore(); // If all questions answered, show the final score
+            }
+        });
+
+        /**
+         * Displays the final score and changes the 'Next' button to 'Restart'.
+         * On 'Restart' click, reloads the page to start the quiz again.
+         */
+        function showScore() {
+            resetState(); // Clear choices and result message
+            questionEl.innerText = `You scored ${score} out of ${quizData.length}!`; // Display final score
+            questionEl.classList.add('text-center'); // Center the score text
+            nextBtn.innerText = 'Restart Quiz'; // Change button text to 'Restart Quiz'
+            nextBtn.style.display = 'block'; // Ensure the button is visible
+
+            // Modify the 'Restart' button's behavior
+            // The existing event listener for 'nextBtn' will now handle the restart logic
+            // because currentQuestionIndex will be >= quizData.length
+            // so the next click will trigger the reload.
+            nextBtn.removeEventListener('click', () => {
+                // This specific anonymous function cannot be removed by removeEventListener
+                // So we will re-assign the event listener or handle the logic within the existing one.
+                // For simplicity, we'll just rely on the main listener's logic.
+            });
+            // Re-add the event listener to ensure it's fresh if needed, though the existing one should suffice.
+            // A simpler approach for restart is to just reload the page.
+            nextBtn.addEventListener('click', () => {
+                location.reload(); // Reload the page to restart the quiz
+            }, { once: true }); // Use { once: true } to ensure it only fires once for restart
+        }
+
+        // Initial load of the first question when the script runs
+        loadQuestion();
+    </script>
+</body>
+</html>
